@@ -88,18 +88,23 @@ def main(args):
     skill_success_cnt_unique = np.zeros(len(skill_sequence_unique))
     print('Unique skill list: {}, length: {}'.format(skill_sequence_unique, len(skill_sequence_unique)))
     test_success_rate = 0
-
+    
     for ep in range(args.test_episode):
         env.reset()
+        rand_episode_snaps = []
         episode_snapshots = [('begin', np.transpose(env.obs['rgb'], [1,2,0]).astype(np.uint8))]
 
-        # sequentially solve the initial computed skills. 
+        # Sequentially solve the initial computed skills. 
         if not args.progressive_search:
             assert args.no_find_skill==0
             assert args.shorter_episode==0
             episode_skill_success_unique = np.zeros(len(skill_sequence_unique))
             for i_sk, sk in enumerate(skill_sequence):
                 print('executing skill:',sk)
+                save_snap = bool(random.getrandbits(1))
+                if args.rand_snapshots and save_snap:
+                    rand_episode_snaps.append(np.transpose(env.obs['rgb'], [1,2,0]).astype(np.uint8))
+                    
                 skill_done, task_success, task_done = skills_model.execute(skill_name=sk, skill_info=skills[sk], env=env)
                 if skill_done or task_success:
                     skill_success_cnt[i_sk]+=1
@@ -123,6 +128,10 @@ def main(args):
             init_items_next = init_items
             while True:
                 print('executing skill:',skill_next)
+                save_snap = bool(random.getrandbits(1))
+                if args.rand_snapshots and save_snap:
+                    rand_episode_snaps.append(np.transpose(env.obs['rgb'], [1,2,0]).astype(np.uint8))
+                
                 skill_done, task_success, task_done = skills_model.execute(skill_name=skill_next, skill_info=skills[skill_next], env=env)
                 if skill_done or task_success:
                     if skill_next in skill_sequence[episode_skill_idx:]:
@@ -162,6 +171,8 @@ def main(args):
             os.mkdir(save_dir_snapshots)
         for i, (sk, im) in enumerate(episode_snapshots):
             imageio.imsave(os.path.join(save_dir_snapshots, '{}_{}.png'.format(i,sk)), im)
+        for i, im in enumerate(rand_episode_snaps):
+            imageio.imsave(os.path.join(save_dir_snapshots, 'rand_snap_{}.png'.format(i)), im)
         print()
 
     # draw skill success figure
@@ -194,5 +205,6 @@ if __name__ == "__main__":
     parser.add_argument('--clip-model-path', type=str, default='mineclip_official/attn.pth')
     parser.add_argument('--task-config-path', type=str, default='envs/hard_task_conf.yaml')
     parser.add_argument('--skills-model-config-path', type=str, default='skills/load_skills.yaml')
+    parser.add_argument('--rand-snapshots', type=int, default=0)
     args = parser.parse_args()
     main(args)
