@@ -68,6 +68,7 @@ def main(args):
         clip_model=model_clip,
         device=device,
         save_rgb=args.save_gif,
+        rand_snapshots=args.rand_snapshots,
         **task_conf
         )
 
@@ -91,7 +92,6 @@ def main(args):
     
     for ep in range(args.test_episode):
         env.reset()
-        rand_episode_snaps = []
         episode_snapshots = [('begin', np.transpose(env.obs['rgb'], [1,2,0]).astype(np.uint8))]
 
         # Sequentially solve the initial computed skills. 
@@ -101,9 +101,6 @@ def main(args):
             episode_skill_success_unique = np.zeros(len(skill_sequence_unique))
             for i_sk, sk in enumerate(skill_sequence):
                 print('executing skill:',sk)
-                save_snap = bool(random.getrandbits(1))
-                if args.rand_snapshots and save_snap:
-                    rand_episode_snaps.append(np.transpose(env.obs['rgb'], [1,2,0]).astype(np.uint8))
                     
                 skill_done, task_success, task_done = skills_model.execute(skill_name=sk, skill_info=skills[sk], env=env)
                 if skill_done or task_success:
@@ -128,10 +125,7 @@ def main(args):
             init_items_next = init_items
             while True:
                 print('executing skill:',skill_next)
-                save_snap = bool(random.getrandbits(1))
-                if args.rand_snapshots and save_snap:
-                    rand_episode_snaps.append(np.transpose(env.obs['rgb'], [1,2,0]).astype(np.uint8))
-                
+                                
                 skill_done, task_success, task_done = skills_model.execute(skill_name=skill_next, skill_info=skills[skill_next], env=env)
                 if skill_done or task_success:
                     if skill_next in skill_sequence[episode_skill_idx:]:
@@ -171,8 +165,11 @@ def main(args):
             os.mkdir(save_dir_snapshots)
         for i, (sk, im) in enumerate(episode_snapshots):
             imageio.imsave(os.path.join(save_dir_snapshots, '{}_{}.png'.format(i,sk)), im)
-        for i, im in enumerate(rand_episode_snaps):
-            imageio.imsave(os.path.join(save_dir_snapshots, 'rand_snap_{}.png'.format(i)), im)
+
+        if args.rand_snapshots:
+            for i, im in enumerate(env.rand_snaps_cache):
+                imageio.imsave(os.path.join(save_dir_snapshots, 'rand_snap_{}.png'.format(i)), im)
+            env.rand_snaps_cache = []
         print()
 
     # draw skill success figure
