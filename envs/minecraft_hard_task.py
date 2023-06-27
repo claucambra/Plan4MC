@@ -115,6 +115,7 @@ class MinecraftHardHarvestEnv:
                  save_rgb=False,
                  max_steps=3000,
                  rand_snapshots=False,
+                 all_snapshots=False,
                  **kwargs):
         
         self.observation_size = (3, *image_size)
@@ -134,9 +135,13 @@ class MinecraftHardHarvestEnv:
         self.device = device
         self.save_rgb = save_rgb
         self.rand_snapshots = rand_snapshots
+        self.all_snapshots = all_snapshots
 
         if rand_snapshots:
             self.rand_snaps_cache = []
+
+        if all_snapshots:
+            self.all_snaps_cache = []
 
     def __del__(self):
         if hasattr(self, 'base_env'):
@@ -239,7 +244,10 @@ class MinecraftHardHarvestEnv:
             save_snap = bool(random.getrandbits(1))
             if save_snap:
                 self.rand_snaps_cache.append(np.transpose(obs['rgb'], [1,2,0]).astype(np.uint8))
-        
+
+        if self.all_snapshots:
+            self.all_snaps_cache.append(np.transpose(obs['rgb'], [1,2,0]).astype(np.uint8))
+                
         return obs, reward, done, info
 
     # for Find skill: detect target items

@@ -69,6 +69,7 @@ def main(args):
         device=device,
         save_rgb=args.save_gif,
         rand_snapshots=args.rand_snapshots,
+        all_snapshots=args.all_snapshots,
         **task_conf
         )
 
@@ -170,6 +171,12 @@ def main(args):
             for i, im in enumerate(env.rand_snaps_cache):
                 imageio.imsave(os.path.join(save_dir_snapshots, 'rand_snap_{}.png'.format(i)), im)
             env.rand_snaps_cache = []
+
+        if args.all_snapshots:
+            for i, im in enumerate(env.all_snaps_cache):
+                imageio.imsave(os.path.join(save_dir_snapshots, 'snap_{}.png'.format(i)), im)
+            env.all_snaps_cache = []
+            
         print()
 
     # draw skill success figure
@@ -203,5 +210,6 @@ if __name__ == "__main__":
     parser.add_argument('--task-config-path', type=str, default='envs/hard_task_conf.yaml')
     parser.add_argument('--skills-model-config-path', type=str, default='skills/load_skills.yaml')
     parser.add_argument('--rand-snapshots', type=int, default=0)
+    parser.add_argument('--all-snapshots', type=int, default=0)
     args = parser.parse_args()
     main(args)
